@@ -20,6 +20,26 @@ app.get('/', (req, res) => {
     res.send('Сервер работает! 🚀');
 });
 
+// Получаем все посты из базы данных 
+app.get('/posts', async (req, res) => {
+	const db = await dbPromise;
+	const posts = await db.all('SELECT * FROM posts');
+	res.json(posts);
+});
+
+app.post('/posts', async (req, res) => {
+	const db = await dbPromise;
+	const result = await db.run(
+	    'INSERT INTO posts (author, text) VALUES (?, ?)',
+	    [req.body.author, req.body.text]
+	 );
+	res.status(201).json({
+		id: result.lastID,
+		author: req.body.author,
+		text: req.body.text
+	});
+});
+
 // Асинхронный запуск сервера с инициализацией БД
 async function startServer() {
     const db = await dbPromise;
