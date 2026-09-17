@@ -40,6 +40,52 @@ app.post('/posts', async (req, res) => {
 	});
 });
 
+app.put('/posts/:id', async (req, res) => {
+    const db = await dbPromise;
+    const {id} = req.params; //берем id из url
+    const {author, text} = req.body; //берем новые данные из тела запроса
+    
+    //проверяем нет ли пустых полей
+    if(!author || !text) {
+    	res.status(400).json({error: 'Поля author и text обязательны'});
+    }
+    
+    //Делаем Update
+    const result = await db.run(
+        'UPDATE posts SET author = ?, text = ? WHERE id = ?',
+        [author, text, id]
+    );
+    
+    //result.changes показывает количество изменненых строк
+    if(result.changes===0) {
+    	return res.status(404).json({error: 'Пост с таким ID не найден'});
+    }
+    
+    res.json({
+        id: Number(id),
+        author,
+        text,
+        message: 'Пост успешно обнавлен'
+    });
+
+});
+
+// удаляем пост по id
+app.delete('/posts/:id', async (req, res) => {
+	const db = await dbPromise;
+	const {id} = req.params;
+	
+	const result = db.run(
+	    'DELETE FROM posts WHERE id = ?', [id]
+	);
+	
+	if(result.changes===0) {
+		return res.status(404).json({error: 'Пост с таким ID не найден'});
+    }
+    
+    res.json({message: `Пост с ID ${id} успешно удален`});
+});
+
 // Асинхронный запуск сервера с инициализацией БД
 async function startServer() {
     const db = await dbPromise;
