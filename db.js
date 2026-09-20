@@ -10,13 +10,13 @@ const dbPromise = open({
 async function initDatabase() {
 	const db = await dbPromise;
 
-    await db.exec(`
-        CREATE TABLE IF NOT EXISTS posts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            author TEXT NOT NULL,
-            text TEXT NOT NULL
-        )
-    `);
+    await db.exec(
+        `CREATE TABLE IF NOT EXISTS posts (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              author TEXT NOT NULL,
+              text TEXT NOT NULL
+          )`
+     );
     
     /*Создаем список колонок уже имеющихся в базе. Делаем это для того, чтобы при добавлении
     новой колонки, избежать ошибки дублирования колонок выполнив проверку на их налие.
@@ -26,10 +26,11 @@ async function initDatabase() {
     const columnNames = columns.map(col => col.name);
     
     if(!columnNames.includes('created_at')) {
-    	await db.exec(`
-            ALTER TABLE posts ADD COLUMN created_at DATETIME DEFAULT '2026-09-16 00:00:00'
-        `);
-        console.log('✅ Добавлена колонка created_at');
+    	await db.exec(
+            `ALTER TABLE posts ADD COLUMN created_at DATETIME DEFAULT '2026-09-16 00:00:00'`
+      );
+        
+      console.log('✅ Добавлена колонка created_at');
     }
     
     if(!columnNames.includes('updated_at')) {

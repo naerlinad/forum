@@ -6,8 +6,38 @@ const { dbPromise } = require('../db');
 // GET /posts
 router.get('/', async (req, res) => {
 	const db = await dbPromise;
-	const posts = await db.all('SELECT * FROM posts');
-	res.json(posts);
+	
+	/*.page и .limit берем из параметров query которые
+    передаються в url запросе, пример:
+    exepmle.com/posts?page=1&limit=10*/
+	const page = parseInt(req.query.page) || 1;
+	const limit = parseInt(req.query.limit) || 10;
+	
+    /*offset должен быть на еденицу меньше предполагаемой
+    выборки элементов из таблицы, вероятнее всего
+    индексация в них идет от нуля, как в массивах.
+    В данном случае нужна именно такая формула
+    для формирования правильного SQL запроса*/
+    const offset = (page -1) * limit; 
+	
+	/*Делаем выборку постов. LIMIT в SQL запросе указывает какое
+    максимальное количество записей база должна выдать, a
+    OFFSET сколько элементов от начала пропустить.*/
+	const posts = await db.all(
+        'SELECT * FROM posts ORDER BY created_at ASC LIMIT ? OFFSET ?',
+        [limit, offset]
+    );
+    
+    //Считаем общее количество постов
+    const total = await db.get('SELECT COUNT (*) as count FROM posts');
+    
+	res.json({
+        posts,
+        page,
+        totalPages: Math.ceil(total.count / limit),
+        totalPosts: total.count
+    });
+        
 });
 
 // POST /posts
