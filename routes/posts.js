@@ -3,39 +3,36 @@ const router = express.Router();
 const { dbPromise } = require('../db');
 
 
-// GET /posts
+// GET /posts?thread_id=1&page=1&limit=10
 router.get('/', async (req, res) => {
 	const db = await dbPromise;
 	
-	/*.page и .limit берем из параметров query которые
-    передаються в url запросе, пример:
-    exepmle.com/posts?page=1&limit=10*/
+	const threadId = parseInt(req.query.thread_id) || 1;
 	const page = parseInt(req.query.page) || 1;
 	const limit = parseInt(req.query.limit) || 10;
 	
-    /*offset должен быть на еденицу меньше предполагаемой
-    выборки элементов из таблицы, вероятнее всего
-    индексация в них идет от нуля, как в массивах.
-    В данном случае нужна именно такая формула
-    для формирования правильного SQL запроса*/
     const offset = (page -1) * limit; 
 	
 	/*Делаем выборку постов. LIMIT в SQL запросе указывает какое
     максимальное количество записей база должна выдать, a
     OFFSET сколько элементов от начала пропустить.*/
 	const posts = await db.all(
-        'SELECT * FROM posts ORDER BY created_at ASC LIMIT ? OFFSET ?',
-        [limit, offset]
+        'SELECT * FROM posts WHERE thread_id = ? ORDER BY created_at ASC LIMIT ? OFFSET ?',
+        [threadId, limit, offset]
     );
     
     //Считаем общее количество постов
-    const total = await db.get('SELECT COUNT (*) as count FROM posts');
+    const total = await db.get(
+        'SELECT COUNT (*) as count FROM posts WHERE thread_id = ?',
+        [threadId]
+    );
     
 	res.json({
         posts,
         page,
         totalPages: Math.ceil(total.count / limit),
-        totalPosts: total.count
+        totalPosts: total.count,
+        thread_id: threadId
     });
         
 });
@@ -43,16 +40,20 @@ router.get('/', async (req, res) => {
 // POST /posts
 router.post('/', async (req, res) => {
 	const db = await dbPromise;
+	const threadId = parseInt(req.body.thread_id) || 1;
+	
 	const result = await db.run(
-	    'INSERT INTO posts (author, text, created_at, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)',
-	    [req.body.author, req.body.text]
+	    `INSERT INTO posts (author, text, thread_id, created_at, updated_at)
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+	    [req.body.author, req.body.text, threadId]
 	 );
 	
 	res.status(201).json({
 		message: "Новый пост создан",
 		id: result.lastID,
 		author: req.body.author,
-		text: req.body.text
+		text: req.body.text,
+		thread_id: threadId
 	});
 });
 
@@ -64,7 +65,7 @@ router.put('/:id', async (req, res) => {
     
     //проверяем нет ли пустых полей
     if(!text) {
-    	return res.status(400).json({error: 'Поле text обязательно'});
+    	return res.status(400).json({error: 'Поле текст обязательно'});
     }
     
     //Делаем Update
@@ -79,7 +80,7 @@ router.put('/:id', async (req, res) => {
     }
     
     res.json({
-        message: `Пост с ID ${id} успешно изменен`
+        message: `Пост с ID ${id} изменен.`
     });
 
 });
@@ -97,7 +98,7 @@ router.delete('/:id', async (req, res) => {
 		return res.status(404).json({error: 'Пост с таким ID не найден'});
     }
     
-    res.json({message: `Пост с ID ${id} успешно удален`});
+    res.json({message: `Пост с ID ${id} удален`});
 });
 
 module.exports = router;

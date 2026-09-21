@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { initDatabase } = require('./db');
 const postsRouter = require('./routes/posts');
+const threadsRouter = require('./routes/threads');
 
 const app = express();
 const PORT = 3000;
@@ -17,6 +18,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 //Подключаем все маршруты по адресу /posts
 app.use('/posts', postsRouter);
+
+app.use('/threads', threadsRouter);
 
 // Асинхронный запуск сервера с инициализацией БД
 async function startServer() {

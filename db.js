@@ -17,23 +17,24 @@ async function initDatabase() {
 	        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	    )
 	`);
+	
+	    //Создаем тему "Гостевая" по умолчанию.
+     await db.exec(`
+         INSERT OR IGNORE INTO threads (id, name, description)
+         VALUES (1, 'Гостевая', 'Общие разговоры, тесты и флуд.')
+     `)
 
     await db.exec(`
         CREATE TABLE IF NOT EXISTS posts (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               author TEXT NOT NULL,
               text TEXT NOT NULL,
+              thread_id INTEGER DEFAULT 1,
               created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
               updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
               FOREIGN KEY (thread_id) REFERENCES threads(id)
           )
      `);
-     
-     //Создаем тему "Гостевая" по умолчанию.
-     await db.exec(`
-         INSERT OR IGNORE INTO threads (id, name, description)
-         VALUES (1, 'Гостевая', 'Общие разговоры, тесты и флуд.')
-     `)
     
     //Начало временного кода для миграции БД.
     const columns = await db.all('PRAGMA table_info(posts)');
