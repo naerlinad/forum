@@ -6,14 +6,14 @@ const postsRouter = require('./routes/posts');
 const app = express();
 const PORT = 3000;
 
+const path = require('path');
+
 //Middleware
 app.use(cors());
 app.use(express.json());
 
-// Временный маршрут (пока оставим его, чтобы проверить, что сервер жив)
-app.get('/', (req, res) => {
-    res.send('Сервер работает! 🚀');
-});
+//Подключаем раздачу статики
+app.use(express.static(path.join(__dirname, 'public')));
 
 //Подключаем все маршруты по адресу /posts
 app.use('/posts', postsRouter);
@@ -23,7 +23,7 @@ async function startServer() {
     await initDatabase();
     
     app.listen(PORT, () => {
-        console.log(`✅ Сервер запущен на http://localhost:${PORT}`);
+        console.log('✅ Сервер запущен.');
     });
 }
 
