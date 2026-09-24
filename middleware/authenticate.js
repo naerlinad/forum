@@ -13,15 +13,16 @@ function authenticateToken(req, res, next) {
     // Если authHeader равен "Bearer abc123", то split(' ')[1] === "abc123"
     const token = authHeader && authHeader.split(' ')[1];
 
-    // 401 Unauthorized — "ты не представился"
+    // 401 Unauthorized
     if (!token) {
         return res.status(401).json({ error: 'Токен не предоставлен.' });
     }
 
     // jwt.verify проверяет подпись и срок действия.
-    // Если всё ок — в user попадают данные из payload токена (id, username, role)
+    // Если всё хорошо в user попадают данные из payload токена (id, username, role)
     jwt.verify(token, JWT_SECRET, (err, user) => {
-        // 403 Forbidden — "ты представился, но пропуск недействителен"
+    	
+        // 403 Forbidden. Токен недействителен.
         if (err) {
             return res.status(403).json({ error: 'Недействительный или просроченный токен.' });
         }

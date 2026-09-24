@@ -6,10 +6,10 @@ const authenticateToken = require('../middleware/authenticate');
 // Выносим проверку прав в отдельную асинхронную функцию
 async function isAuthorized(id, user, db) {
     const post = await db.get(`
-        SELECT p.id, p.author_id, u.role as author_role 
-        FROM posts p 
-        JOIN users u ON p.author_id = u.id 
-        WHERE p.id = ?`, 
+        SELECT p.id, p.author_id, u.role as author_role
+        FROM posts p
+        LEFT JOIN users u ON p.author_id = u.id
+        WHERE p.id = ?`,
         [id]
     );
     
@@ -110,10 +110,6 @@ router.put('/:id', authenticateToken, async (req, res) => {
         'UPDATE posts SET text = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
         [text, id]
     );
-    
-    if (result.changes === 0) {
-        return res.status(404).json({ error: 'Пост с таким ID не найден.' });
-    }
     
     res.json({ message: `Пост с ID ${id} изменён.` });
 });
