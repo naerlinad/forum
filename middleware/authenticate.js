@@ -8,10 +8,9 @@ if (!JWT_SECRET) {
 function authenticateToken(req, res, next) {
     // Заголовок Authorization имеет формат: "Bearer <token>"
     const authHeader = req.headers['authorization'];
-    
-    // Разделяем строку по пробелу и берём вторую часть (сам токен)
-    // Если authHeader равен "Bearer abc123", то split(' ')[1] === "abc123"
-    const token = authHeader && authHeader.split(' ')[1];
+    const token = authHeader && authHeader.startsWith('Bearer ') 
+        ? authHeader.substring(7) 
+        : null;
 
     // 401 Unauthorized
     if (!token) {
@@ -19,9 +18,8 @@ function authenticateToken(req, res, next) {
     }
 
     // jwt.verify проверяет подпись и срок действия.
-    // Если всё хорошо в user попадают данные из payload токена (id, username, role)
+    // Если всё хорошо, в user попадают данные из payload токена (id, username, role)
     jwt.verify(token, JWT_SECRET, (err, user) => {
-    	
         // 403 Forbidden. Токен недействителен.
         if (err) {
             return res.status(403).json({ error: 'Недействительный или просроченный токен.' });

@@ -1,8 +1,9 @@
 const express = require('express');
-const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { dbPromise } = require('../db');
+
+const router = express.Router();
 
 // Берём секрет из переменных окружения
 // Если его там нет — падаем с ошибкой при старте (fail fast)
@@ -13,7 +14,6 @@ if (!JWT_SECRET) {
 
 // POST /auth/register — регистрация
 router.post('/register', async (req, res) => {
-    const db = await dbPromise;
     const { username, password } = req.body;
 
     if (!username || !password) {
@@ -33,8 +33,10 @@ router.post('/register', async (req, res) => {
             error: 'Имя пользователя должно быть от 6 до 30 символов и содержать только латинские буквы, цифры и "_".' 
         });
     }
-
+    
     try {
+    	const db = await dbPromise;
+    	
         // bcrypt.hash — асинхронный, не блокирует сервер
         // 10 — "стоимость": 2^10 итераций. Баланс скорости и безопасности
         const passwordHash = await bcrypt.hash(password, 10);
@@ -87,7 +89,7 @@ router.post('/login', async (req, res) => {
     // jwt.sign создаёт токен. 
     // Payload (первый аргумент) — данные внутри токена.
     const token = jwt.sign(
-        { id: user.id, username: user.username, role: user.role },
+        { id: user.id, username: user.username, role: user.role},
         JWT_SECRET,
         { expiresIn: '7d' } // токен живёт 7 дней
     );

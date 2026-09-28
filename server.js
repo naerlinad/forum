@@ -9,6 +9,7 @@ const { initDatabase } = require('./db');
 const postsRouter = require('./routes/posts');
 const threadsRouter = require('./routes/threads');
 const authRouter = require('./routes/auth');
+const usersRouter = require('./routes/users');
 
 const app = express();
 
@@ -26,14 +27,19 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/auth', authRouter);
 app.use('/posts', postsRouter);
 app.use('/threads', threadsRouter);
+app.use('/users', usersRouter);
 
 // Асинхронный запуск сервера с инициализацией БД
 async function startServer() {
-    await initDatabase();
-    
-    app.listen(PORT, () => {
-        console.log(`✅ Сервер запущен на порту ${PORT}.`);
-    });
+	try {
+        await initDatabase();
+        app.listen(PORT, () => {
+            console.log(`✅ Сервер запущен на порту ${PORT}.`);
+        });
+    } catch (error) {
+        console.error('❌Ошибка инициализации базы данных.', error);
+        process.exit(1); // Завершаем процесс если БД не работает.
+    }
 }
 
 startServer();
