@@ -8,11 +8,6 @@ database.sqlite
 # Переменные окружения (секреты, пароли, ключи API)
 .env
 
-# Логи отладки
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Системные файлы macOS (на всякий случай)
-.DS_Store
-Thumbs.db
+# Файлы логов
+server.log
+*.log

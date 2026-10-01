@@ -10,21 +10,25 @@ const postsRouter = require('./routes/posts');
 const threadsRouter = require('./routes/threads');
 const authRouter = require('./routes/auth');
 const usersRouter = require('./routes/users');
+const logger = require('./middleware/logger');
+const { globalLimiter, authLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
 
 // Берём порт из .env. Если там нет — используем 3000.
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+// Middleware. Порядок важен.
+app.use(logger);
+app.use(globalLimiter);
 app.use(cors());
 app.use(express.json());
 
-// Раздача статических файлов (HTML, CSS, JS для фронтенда)
+// Раздача статики
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Подключаем маршруты
-app.use('/auth', authRouter);
+app.use('/auth', authLimiter, authRouter);
 app.use('/posts', postsRouter);
 app.use('/threads', threadsRouter);
 app.use('/users', usersRouter);
