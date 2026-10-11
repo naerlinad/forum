@@ -4,10 +4,13 @@ node_modules/
 # База данных SQLite (содержит пользовательские данные)
 database.sqlite
 *.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite-journal
 
 # Переменные окружения (секреты, пароли, ключи API)
 .env
 
 # Файлы логов
-server.log
 *.log
+npm-debug.log*

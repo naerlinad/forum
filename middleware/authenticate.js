@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { dbPromise } = require('../db');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -6,29 +7,41 @@ if (!JWT_SECRET) {
 }
 
 function authenticateToken(req, res, next) {
+    
     // Заголовок Authorization имеет формат: "Bearer <token>"
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.startsWith('Bearer ') 
         ? authHeader.substring(7) 
         : null;
 
-    // 401 Unauthorized
     if (!token) {
         return res.status(401).json({ error: 'Токен не предоставлен.' });
     }
 
-    // jwt.verify проверяет подпись и срок действия.
-    // Если всё хорошо, в user попадают данные из payload токена (id, username, role)
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        // 403 Forbidden. Токен недействителен.
-        if (err) {
-            return res.status(403).json({ error: 'Недействительный или просроченный токен.' });
+    jwt.verify(token, JWT_SECRET, async (err, decodedPayload) => {
+        try{
+            if (err) {
+                return res.status(403).json({ error: 'Недействительный или просроченный токен.' });
+            }
+            
+            const db = await dbPromise;
+            const user = await db.get(`
+                SELECT id, username, role, suspended FROM users
+                WHERE id = ?`, [decodedPayload.id]
+            );
+            if(!user) {
+                return res.status(403).json({error:'Пользователь не найден.'});
+            }
+            if(user.suspended === 1) {
+                return res.status(403).json({error: 'Аккаунт ограничен.'});
+            }
+         
+            req.user = user;
+            next();
+        } catch (error) {
+            console.error('Ошибка аутентификатора.', error);
+            res.status(500).json({error: ' Ошибка сервера.'});
         }
-        
-        // Кладём пользователя в req — теперь любой следующий обработчик
-        // может обратиться к req.user.id, req.user.username и т.д.
-        req.user = user;
-        next();
     });
 }
 

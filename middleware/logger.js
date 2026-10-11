@@ -1,32 +1,33 @@
-const fs = require('fs');
+const fs = require('fs/promises'); // используем промисифицированную версию
 const path = require('path');
 
-const logPath = path.join(__dirname, '..', 'server.log');
+const logPath = path.join(__dirname, '..', 'requests.log');
 
-function logger(req, res, next) {
+function logger(req, res, next) { // async здесь не нужен, так как мы не ждем ничего до next()
     const startDate = Date.now();
     
-    //вешаем "слушетеля" события завершения ответа.
-    res.on('finish', () => {
+    // Делаем сам колбэк async, чтобы внутри работал await
+    res.on('finish', async () => { 
         const duration = Date.now() - startDate;
-        
         const date = new Date().toLocaleString('ru-RU');
         
-        //Код записан в одну строку, так как между `` сахраняються все пробелы и символы переноса строк.
-        const logEntry = `[${date}] | IP: ${req.ip.padEnd(15)} | ${req.method.padEnd(6)} | ${req.path.padEnd(20)} | Статус: ${res.statusCode} | ${duration} ms\n`;
+        // Если req.ip вдруг окажется undefined, будет строка 'unknown'
+        const ip = String(req.ip || 'unknown'); 
+        
+        const logEntry = `[${date}] | IP: ${ip.padEnd(15)} | ${req.method.padEnd(6)} | ${req.path.padEnd(20)} | Статус: ${res.statusCode} | ${duration} ms\n`;
         
         try {
-            fs.appendFileSync(logPath, logEntry);
+            // Теперь это настоящий Promise, try...catch перехватит ошибку записи
+            await fs.appendFile(logPath, logEntry);
         } catch (error) {
-            console.log('Ошибка записи лог файла.', error);
+            console.error('Ошибка записи лог файла:', error);
         }
         
-        //Вывод в консоль
+        // Вывод в консоль
         console.log(logEntry.trim());
-        
     });
     
-    next();
+    next(); // Продолжаем обработку запроса немедленно, не дожидаясь записи лога
 }
 
 module.exports = logger;
